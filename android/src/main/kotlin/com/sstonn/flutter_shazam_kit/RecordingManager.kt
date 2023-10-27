@@ -7,12 +7,14 @@ import android.media.MediaRecorder
 import android.os.Process
 import androidx.annotation.RequiresPermission
 import androidx.annotation.WorkerThread
-import java.nio.ByteBuffer
+
 
 class RecordingManager {
     private var audioRecord: AudioRecord? = null
     private var audioFormat: AudioFormat? = null
     var readBufferSize: Int
+    var threshold: Short = 100
+
 
     init {
         // Small buffer to retrieve chunks of audio
@@ -25,26 +27,24 @@ class RecordingManager {
 
     @WorkerThread
     fun record(): ByteArray {
-
-        // Final desired buffer size to allocate 12 seconds of audio
-//        val size = audioFormat!!.sampleRate * audioFormat!!.encoding.toByteAllocation() * seconds
-//        val destination = ByteBuffer.allocate(size)
-
-
-
         // Make sure you are on a dedicated thread or thread pool for mic recording only and
         // elevate the priority to THREAD_PRIORITY_URGENT_AUDIO
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
-
-        val readBuffer = ByteArray(readBufferSize)
-        val actualRead = audioRecord!!.read(readBuffer, 0, readBufferSize)
-        return readBuffer.sliceArray(0 until actualRead)
-//        while (destination.remaining() > 0) {
-//            val actualRead = audioRecord!!.read(readBuffer, 0, readBufferSize)
-//            val byteArray = readBuffer.sliceArray(0 until actualRead)
-//            destination.putTrimming(byteArray)
-//        }
-//        return destination.array()
+        return try {
+            val readBuffer = ByteArray(readBufferSize)
+            val actualRead = audioRecord!!.read(readBuffer, 0, readBufferSize)
+            if( actualRead <= 0 ) throw Exception("Error reading audio buffer")
+            readBuffer.sliceArray(0 until actualRead)
+            if (readBuffer.check(actualRead)) {
+                // println("Max value is ${readBuffer.maxOrNull()}")
+                readBuffer
+            }
+            else
+                ByteArray(0)
+        } catch (e: Exception) {
+            println(e)
+            ByteArray(0)
+        }
     }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
@@ -77,18 +77,27 @@ class RecordingManager {
         audioFormat = null
     }
 
-    private fun Int.toByteAllocation(): Int {
-        return when (this) {
-            AudioFormat.ENCODING_PCM_16BIT -> 2
-            else -> throw IllegalArgumentException("Unsupported encoding")
+    fun searchThreshold(arr: ByteArray, thr: Short): Int {
+        var peakIndex: Int
+        val arrLen = arr.size
+        peakIndex = 0
+        while (peakIndex < arrLen) {
+            if (arr[peakIndex] >= thr || arr[peakIndex] <= -thr) {
+                //se supera la soglia, esci e ritorna peakindex-mezzo kernel.
+                return peakIndex
+            }
+            peakIndex++
         }
+        return -1 //not found
     }
 
-    private fun ByteBuffer.putTrimming(byteArray: ByteArray) {
-        if (byteArray.size <= this.capacity() - this.position()) {
-            this.put(byteArray)
-        } else {
-            this.put(byteArray, 0, this.capacity() - this.position())
+    private fun ByteArray.check(actualRead: Int) :Boolean{
+        if (AudioRecord.ERROR_INVALID_OPERATION != actualRead) {
+            //check signal
+            //put a threshold
+            val foundPeak = searchThreshold(this, threshold)
+            return foundPeak > -1
         }
+        return false
     }
 }

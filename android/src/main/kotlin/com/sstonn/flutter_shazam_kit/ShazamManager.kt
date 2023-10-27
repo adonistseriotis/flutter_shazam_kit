@@ -38,6 +38,7 @@ class ShazamManager(private val callbackChannel: MethodChannel) {
             catalog = ShazamKit.createShazamCatalog(tokenProvider)
 
             coroutineScope.launch {
+
                 when (val result =
                                 ShazamKit.createStreamingSession(
                                         catalog,
@@ -55,7 +56,7 @@ class ShazamManager(private val callbackChannel: MethodChannel) {
                 flutterResult.success(null)
                 currentSession?.let {
                     currentSession?.recognitionResults()?.collect { result: MatchResult ->
-                        try {
+
                             when (result) {
                                 is MatchResult.Match ->
                                         callbackChannel.invokeMethod(
@@ -70,24 +71,13 @@ class ShazamManager(private val callbackChannel: MethodChannel) {
                                                 result.exception.message
                                         )
                             }
-                        } catch (e: Exception) {
-                            e.message?.let { onError(it) }
                         }
                     }
                 }
-    }
         } catch (e: Exception) {
             e.message?.let { onError(it) }
         }
     }
-
-//    private suspend fun recordingFlow(): Flow<ByteArray> = flow {
-//        while(isRecording) {
-//            var seconds = catalog.maximumQuerySignatureDurationInMs.toInt() / 1000
-//            val audioChunk = recordingManager.record(seconds)
-//            emit(audioChunk)
-//        }
-//    }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     fun startListening() {
@@ -107,35 +97,23 @@ class ShazamManager(private val callbackChannel: MethodChannel) {
             recordingThread = Thread({
                 // record audio and flow it to the StreamingSession
                 while(isRecording) {
-//                    var seconds = catalog.maximumQuerySignatureDurationInMs.toInt() / 1000
-                    val audioChunk = recordingManager.record()
-                    currentSession?.matchStream(
-                        audioChunk,
-                        recordingManager.readBufferSize,
-                        System.currentTimeMillis(),
-                    )
+                    try {
+                        val audioChunk = recordingManager.record()
+                        if (audioChunk.isEmpty()) {
+                            continue
+                        }
+                            currentSession?.matchStream(
+                                audioChunk,
+                                recordingManager.readBufferSize,
+                                System.currentTimeMillis(),
+                            )
+                    } catch (e: Exception) {
+                        println(e)
+                        onError(e.message ?: "Unknown error")
+                    }
                 }
             }, "AudioRecorder Thread")
             recordingThread!!.start()
-
-
-//            Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
-//
-//            audioRecord?.startRecording()
-//            isRecording = true
-//            recordingThread = Thread({
-//                val readBuffer = ByteArray(bufferSize)
-//                while (isRecording) {
-//                    val actualRead = audioRecord!!.read(readBuffer, 0, bufferSize)
-//                    if (actualRead > 0) {
-//                        currentSession?.matchStream(readBuffer, actualRead, System.currentTimeMillis())
-//                    }
-//                    else {
-//                        println("Actual read is non-positive." + actualRead.toString())
-//                    }
-//                }
-//            }, "AudioRecorder Thread")
-//            recordingThread!!.start()
         } catch (e: Exception) {
             e.message?.let { onError(it) }
         }
