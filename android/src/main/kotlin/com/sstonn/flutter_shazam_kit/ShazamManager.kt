@@ -6,20 +6,24 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Process
 import androidx.annotation.RequiresPermission
+import androidx.annotation.WorkerThread
 import com.shazam.shazamkit.*
 import io.flutter.plugin.common.MethodChannel
 import java.lang.Exception
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import java.nio.ByteBuffer
 
 // TODO: Add more comments
 class ShazamManager(private val callbackChannel: MethodChannel) {
     private lateinit var catalog: Catalog
+    private var recordingManager: RecordingManager = RecordingManager()
     private var currentSession: StreamingSession? = null
-    private var audioRecord: AudioRecord? = null
     private var recordingThread: Thread? = null
     private var isRecording = false
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
@@ -32,12 +36,13 @@ class ShazamManager(private val callbackChannel: MethodChannel) {
             }
             val tokenProvider = DeveloperTokenProvider { DeveloperToken(developerToken) }
             catalog = ShazamKit.createShazamCatalog(tokenProvider)
+
             coroutineScope.launch {
                 when (val result =
                                 ShazamKit.createStreamingSession(
                                         catalog,
                                         AudioSampleRateInHz.SAMPLE_RATE_48000,
-                                        8192
+                                        recordingManager.readBufferSize
                                 )
                 ) {
                     is ShazamKitResult.Success -> {
@@ -76,6 +81,14 @@ class ShazamManager(private val callbackChannel: MethodChannel) {
         }
     }
 
+//    private suspend fun recordingFlow(): Flow<ByteArray> = flow {
+//        while(isRecording) {
+//            var seconds = catalog.maximumQuerySignatureDurationInMs.toInt() / 1000
+//            val audioChunk = recordingManager.record(seconds)
+//            emit(audioChunk)
+//        }
+//    }
+
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     fun startListening() {
         try {
@@ -87,43 +100,42 @@ class ShazamManager(private val callbackChannel: MethodChannel) {
                 return
             }
             callbackChannel.invokeMethod("detectStateChanged", 1)
-            val audioSource = MediaRecorder.AudioSource.UNPROCESSED
-            val audioFormat =
-                    AudioFormat.Builder()
-                            .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
-                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                            .setSampleRate(48_000)
-                            .build()
 
-            audioRecord =
-                    AudioRecord.Builder()
-                            .setAudioSource(audioSource)
-                            .setAudioFormat(audioFormat)
-                            .build()
-            val bufferSize =
-                    AudioRecord.getMinBufferSize(
-                            48_000,
-                            AudioFormat.CHANNEL_IN_MONO,
-                            AudioFormat.ENCODING_PCM_16BIT
-                    )
-
-            Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
-
-            audioRecord?.startRecording()
+            recordingManager.start()
             isRecording = true
+
             recordingThread = Thread({
-                val readBuffer = ByteArray(bufferSize)
-                while (isRecording) {
-                    val actualRead = audioRecord!!.read(readBuffer, 0, bufferSize)
-                    if (actualRead > 0) {
-                        currentSession?.matchStream(readBuffer, actualRead, System.currentTimeMillis())
-                    }
-                    else {
-                        println("Actual read is non-positive." + actualRead.toString())
-                    }
+                // record audio and flow it to the StreamingSession
+                while(isRecording) {
+//                    var seconds = catalog.maximumQuerySignatureDurationInMs.toInt() / 1000
+                    val audioChunk = recordingManager.record()
+                    currentSession?.matchStream(
+                        audioChunk,
+                        recordingManager.readBufferSize,
+                        System.currentTimeMillis(),
+                    )
                 }
             }, "AudioRecorder Thread")
             recordingThread!!.start()
+
+
+//            Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
+//
+//            audioRecord?.startRecording()
+//            isRecording = true
+//            recordingThread = Thread({
+//                val readBuffer = ByteArray(bufferSize)
+//                while (isRecording) {
+//                    val actualRead = audioRecord!!.read(readBuffer, 0, bufferSize)
+//                    if (actualRead > 0) {
+//                        currentSession?.matchStream(readBuffer, actualRead, System.currentTimeMillis())
+//                    }
+//                    else {
+//                        println("Actual read is non-positive." + actualRead.toString())
+//                    }
+//                }
+//            }, "AudioRecorder Thread")
+//            recordingThread!!.start()
         } catch (e: Exception) {
             e.message?.let { onError(it) }
         }
@@ -131,13 +143,9 @@ class ShazamManager(private val callbackChannel: MethodChannel) {
 
     fun stopListening() {
         callbackChannel.invokeMethod("detectStateChanged", 0)
-        if (audioRecord != null) {
-            isRecording = false
-            audioRecord!!.stop()
-            audioRecord!!.release()
-            audioRecord = null
-            recordingThread = null
-        }
+        isRecording = false
+        recordingManager.stop()
+        recordingThread = null
     }
 
     private fun onError(message: String) {
