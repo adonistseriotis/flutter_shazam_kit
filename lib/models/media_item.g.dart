@@ -22,6 +22,7 @@ MediaItem _$MediaItemFromJson(Map<String, dynamic> json) => MediaItem(
               .toList() ??
           [],
       isrc: json['isrc'] as String? ?? '',
+      url: json['url'] as String? ?? '',
     );
 
 Map<String, dynamic> _$MediaItemToJson(MediaItem instance) => <String, dynamic>{
@@ -37,4 +38,5 @@ Map<String, dynamic> _$MediaItemToJson(MediaItem instance) => <String, dynamic>{
       'webUrl': instance.webUrl,
       'genres': instance.genres,
       'isrc': instance.isrc,
+      'url': instance.url,
     };

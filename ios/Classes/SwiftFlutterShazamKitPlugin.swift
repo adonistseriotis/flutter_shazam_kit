@@ -133,40 +133,54 @@ extension SwiftFlutterShazamKitPlugin{
     }
 }
 
+struct MediaItems: Encodable {
+    let title: String
+    let subtitle: String
+    let shazamId: String
+    let appleMusicId: String
+    let appleMusicUrL: URL
+    let artworkUrl: URL
+    let artist: String
+    let matchOffset: TimeInterval
+    let videoUrl: URL
+    let webUrl: URL
+    let genres: [String]
+    let isrc: String
+    let url: URL
+}
+
 //MARK: Delegate methods for SHSession
 extension SwiftFlutterShazamKitPlugin: SHSessionDelegate{
     public func session(_ session: SHSession, didFind match: SHMatch) {
-        var mediaItems: [[String: Any]] = []
-        match.mediaItems.forEach{rawItem in
-            var item: [String: Any] = [:]
-            item["title"] = rawItem.title
-            item["subtitle"] = rawItem.subtitle
-            item["shazamId"] = rawItem.shazamID
-            item["appleMusicId"] = rawItem.appleMusicID
-            if let appleUrl = rawItem.appleMusicURL{
-                item["appleMusicUrl"] = appleUrl.absoluteString
+        let mediaItems = match.mediaItems
+        if let firstItem = mediaItems.first {
+            let url = firstItem.songs.first?.previewAssets?.first?.url
+            
+            let _shazamMedia = MediaItems(
+                title:firstItem.title!,
+                subtitle:firstItem.subtitle!,
+                shazamId:firstItem.shazamID!,
+                appleMusicId:firstItem.appleMusicID!,
+                appleMusicUrL:firstItem.appleMusicURL!,
+                artworkUrl:firstItem.artworkURL!,
+                artist:firstItem.artist!,
+                matchOffset:firstItem.matchOffset,
+                videoUrl:firstItem.videoURL!,
+                webUrl:firstItem.webURL!,
+                genres:firstItem.genres,
+                isrc:firstItem.isrc!,
+                url: url!
+            )
+            
+            print("=== _shazamMedia", _shazamMedia)
+            
+            do {
+                let jsonData = try JSONEncoder().encode([_shazamMedia])
+                let jsonString = String(data: jsonData, encoding: .utf8)!
+                self.callbackChannel?.invokeMethod("matchFound", arguments: jsonString)
+            } catch {
+                callbackChannel?.invokeMethod("didHasError", arguments: "Error when trying to format data, please try again")
             }
-            if let artworkUrl = rawItem.artworkURL{
-                item["artworkUrl"] = artworkUrl.absoluteString
-            }
-            item["artist"] = rawItem.artist
-            item["matchOffset"] = rawItem.matchOffset
-            if let videoUrl = rawItem.videoURL{
-                item["videoUrl"] = videoUrl.absoluteString
-            }
-            if let webUrl = rawItem.webURL{
-                item["webUrl"] = webUrl.absoluteString
-            }
-            item["genres"] = rawItem.genres
-            item["isrc"] = rawItem.isrc
-            mediaItems.append(item)
-        }
-        do{
-            let jsonData = try JSONSerialization.data(withJSONObject: mediaItems)
-            let jsonString = String(data: jsonData, encoding: .utf8)
-            self.callbackChannel?.invokeMethod("matchFound", arguments: jsonString)
-        }catch{
-            callbackChannel?.invokeMethod("didHasError", arguments: "Error when trying to format data, please try again")
         }
     }
     

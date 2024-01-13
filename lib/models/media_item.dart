@@ -27,6 +27,7 @@ class MediaItem {
   // @JsonKey(defaultValue: "")
   final String isrc;
   // @JsonKey(defaultValue: [], ignore: true)
+  final String url;
   // final List<Song> songs;
 
   MediaItem(
@@ -41,7 +42,8 @@ class MediaItem {
       this.videoUrl = "",
       this.webUrl = "",
       this.genres = const [],
-      this.isrc = ""});
+      this.isrc = "",
+      this.url = ""});
 
   factory MediaItem.fromJson(Map<String, dynamic> json) =>
       _$MediaItemFromJson(json);
