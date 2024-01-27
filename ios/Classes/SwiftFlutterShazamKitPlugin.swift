@@ -74,16 +74,16 @@ extension SwiftFlutterShazamKitPlugin{
     private func generateSignature() {
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: .zero)
-
+        
         inputNode.installTap(onBus: .zero, bufferSize: 1024, format: recordingFormat) { [weak session] buffer, _ in
             session?.matchStreamingBuffer(buffer, at: nil)
         }
     }
     
     private func startAudioRecording() throws {
-      try audioEngine.start()
+        try audioEngine.start()
     }
-
+    
     func startListening(result: FlutterResult) throws {
         guard session != nil else{
             callbackChannel?.invokeMethod("didHasError", arguments: "ShazamSession not found, please call configureShazamKitSession() first to initialize it.")
@@ -129,24 +129,25 @@ extension SwiftFlutterShazamKitPlugin{
         try audioSession.setActive(true)
         try audioEngine.start()
         print("Audio engine is running after resuming? \(audioEngine.isRunning)")
-//        generateSignature()
+        //        generateSignature()
     }
 }
 
 struct MediaItems: Encodable {
-    let title: String
-    let subtitle: String
-    let shazamId: String
-    let appleMusicId: String
-    let appleMusicUrL: URL
-    let artworkUrl: URL
-    let artist: String
+    let title: String?
+    let subtitle: String?
+    let shazamId: String?
+    let appleMusicId: String?
+    let appleMusicUrL: URL?
+    let artworkUrl: URL?
+    let artist: String?
     let matchOffset: TimeInterval
-    let videoUrl: URL
-    let webUrl: URL
+    let videoUrl: URL?
+    let webUrl: URL?
     let genres: [String]
-    let isrc: String
-    let url: URL
+    let isrc: String?
+    let url: URL?
+    let explicitContent: Bool
 }
 
 //MARK: Delegate methods for SHSession
@@ -157,19 +158,20 @@ extension SwiftFlutterShazamKitPlugin: SHSessionDelegate{
             let url = firstItem.songs.first?.previewAssets?.first?.url
             
             let _shazamMedia = MediaItems(
-                title:firstItem.title!,
-                subtitle:firstItem.subtitle!,
-                shazamId:firstItem.shazamID!,
-                appleMusicId:firstItem.appleMusicID!,
-                appleMusicUrL:firstItem.appleMusicURL!,
-                artworkUrl:firstItem.artworkURL!,
-                artist:firstItem.artist!,
+                title:firstItem.title ?? "",
+                subtitle:firstItem.subtitle ?? "",
+                shazamId:firstItem.shazamID ?? "",
+                appleMusicId:firstItem.appleMusicID ?? "",
+                appleMusicUrL:firstItem.appleMusicURL ?? URL(string: ""),
+                artworkUrl:firstItem.artworkURL ?? URL(string: ""),
+                artist:firstItem.artist ?? "",
                 matchOffset:firstItem.matchOffset,
-                videoUrl:firstItem.videoURL!,
-                webUrl:firstItem.webURL!,
+                videoUrl:firstItem.videoURL ?? URL(string: ""),
+                webUrl:firstItem.webURL ?? URL(string: ""),
                 genres:firstItem.genres,
-                isrc:firstItem.isrc!,
-                url: url!
+                isrc:firstItem.isrc ?? "",
+                url: url ?? URL(string: ""),
+                explicitContent: firstItem.explicitContent
             )
             
             print("=== _shazamMedia", _shazamMedia)
