@@ -7,28 +7,22 @@ part of 'media_item.dart';
 // **************************************************************************
 
 MediaItem _$MediaItemFromJson(Map<String, dynamic> json) => MediaItem(
-      title: json['title'] as String,
-      subtitle: json['subtitle'] as String? ?? "",
-      shazamId: json['shazamId'] as String,
-      appleMusicId: json['appleMusicId'] as String,
-      appleMusicUrl: json['appleMusicUrl'] as String,
-      artworkUrl: json['artworkUrl'] as String? ?? "",
-      artist: json['artist'] as String,
+      title: json['title'] as String? ?? '',
+      subtitle: json['subtitle'] as String? ?? '',
+      shazamId: json['shazamId'] as String? ?? '',
+      appleMusicId: json['appleMusicId'] as String? ?? '',
+      appleMusicUrl: json['appleMusicUrl'] as String? ?? '',
+      artworkUrl: json['artworkUrl'] as String? ?? '',
+      artist: json['artist'] as String? ?? '',
       matchOffset: (json['matchOffset'] as num?)?.toDouble() ?? 0,
-      videoUrl: json['videoUrl'] as String? ?? "",
-      webUrl: json['webUrl'] as String? ?? "",
+      videoUrl: json['videoUrl'] as String? ?? '',
+      webUrl: json['webUrl'] as String? ?? '',
       genres: (json['genres'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
-          const [],
-      isrc: json['isrc'] as String? ?? "",
-      explicitContent: json['explicitContent'] as bool? ?? false,
-      url: json['url'] as String? ?? "",
-      albumTitle: json['albumTitle'] as String? ?? "",
-      composerName: json['composerName'] as String? ?? "",
-      releaseDate: json['releaseDate'] == null
-          ? null
-          : DateTime.parse(json['releaseDate'] as String),
+          [],
+      isrc: json['isrc'] as String? ?? '',
+      url: json['url'] as String? ?? '',
     );
 
 Map<String, dynamic> _$MediaItemToJson(MediaItem instance) => <String, dynamic>{
@@ -44,9 +38,5 @@ Map<String, dynamic> _$MediaItemToJson(MediaItem instance) => <String, dynamic>{
       'webUrl': instance.webUrl,
       'genres': instance.genres,
       'isrc': instance.isrc,
-      'explicitContent': instance.explicitContent,
       'url': instance.url,
-      'albumTitle': instance.albumTitle,
-      'composerName': instance.composerName,
-      'releaseDate': instance.releaseDate.toIso8601String(),
     };
