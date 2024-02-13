@@ -146,8 +146,11 @@ struct MediaItems: Encodable {
     let webUrl: URL?
     let genres: [String]
     let isrc: String?
-    let url: URL?
     let explicitContent: Bool
+    let url: URL?
+    let albumTitle: String?
+    let composerName: String?
+    let releaseDate: Date?
 }
 
 //MARK: Delegate methods for SHSession
@@ -155,7 +158,11 @@ extension SwiftFlutterShazamKitPlugin: SHSessionDelegate{
     public func session(_ session: SHSession, didFind match: SHMatch) {
         let mediaItems = match.mediaItems
         if let firstItem = mediaItems.first {
-            let url = firstItem.songs.first?.previewAssets?.first?.url
+            let songs = firstItem.songs.first
+            let url = songs?.previewAssets?.first?.url
+            let albumTitle = songs?.albumTitle
+            let composerName = songs?.composerName
+            let releaseDate = songs?.releaseDate
             
             let _shazamMedia = MediaItems(
                 title:firstItem.title ?? "",
@@ -170,11 +177,14 @@ extension SwiftFlutterShazamKitPlugin: SHSessionDelegate{
                 webUrl:firstItem.webURL ?? URL(string: ""),
                 genres:firstItem.genres,
                 isrc:firstItem.isrc ?? "",
+                explicitContent: firstItem.explicitContent,
                 url: url ?? URL(string: ""),
-                explicitContent: firstItem.explicitContent
+                albumTitle: albumTitle,
+                composerName: composerName,
+                releaseDate: releaseDate
             )
             
-            print("=== _shazamMedia", _shazamMedia)
+//            print("=== _shazamMedia", _shazamMedia)
             
             do {
                 let jsonData = try JSONEncoder().encode([_shazamMedia])
