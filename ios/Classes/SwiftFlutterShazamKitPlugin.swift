@@ -150,7 +150,7 @@ struct MediaItems: Encodable {
     let url: URL?
     let albumTitle: String?
     let composerName: String?
-    let releaseDate: Date?
+    let releaseDate: String?
 }
 
 //MARK: Delegate methods for SHSession
@@ -162,29 +162,29 @@ extension SwiftFlutterShazamKitPlugin: SHSessionDelegate{
             let url = songs?.previewAssets?.first?.url
             let albumTitle = songs?.albumTitle
             let composerName = songs?.composerName
-            let releaseDate = songs?.releaseDate
+            let releaseDate = songs?.releaseDate?.ISO8601Format()
             
             let _shazamMedia = MediaItems(
-                title:firstItem.title ?? "",
-                subtitle:firstItem.subtitle ?? "",
-                shazamId:firstItem.shazamID ?? "",
-                appleMusicId:firstItem.appleMusicID ?? "",
-                appleMusicUrL:firstItem.appleMusicURL ?? URL(string: ""),
-                artworkUrl:firstItem.artworkURL ?? URL(string: ""),
-                artist:firstItem.artist ?? "",
+                title:firstItem.title,
+                subtitle:firstItem.subtitle,
+                shazamId:firstItem.shazamID,
+                appleMusicId:firstItem.appleMusicID,
+                appleMusicUrL:firstItem.appleMusicURL,
+                artworkUrl:firstItem.artworkURL,
+                artist:firstItem.artist,
                 matchOffset:firstItem.matchOffset,
-                videoUrl:firstItem.videoURL ?? URL(string: ""),
-                webUrl:firstItem.webURL ?? URL(string: ""),
+                videoUrl:firstItem.videoURL,
+                webUrl:firstItem.webURL,
                 genres:firstItem.genres,
-                isrc:firstItem.isrc ?? "",
+                isrc:firstItem.isrc,
                 explicitContent: firstItem.explicitContent,
-                url: url ?? URL(string: ""),
+                url: url,
                 albumTitle: albumTitle,
                 composerName: composerName,
                 releaseDate: releaseDate
             )
             
-//            print("=== _shazamMedia", _shazamMedia)
+            //            print("=== _shazamMedia", _shazamMedia)
             
             do {
                 let jsonData = try JSONEncoder().encode([_shazamMedia])

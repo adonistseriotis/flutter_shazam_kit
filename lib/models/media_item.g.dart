@@ -26,6 +26,7 @@ MediaItem _$MediaItemFromJson(Map<String, dynamic> json) => MediaItem(
       url: json['url'] as String? ?? '',
       albumTitle: json['albumTitle'] as String? ?? "",
       composerName: json['composerName'] as String? ?? "",
+      releaseDate: json['releaseDate'] as String? ?? "",
     );
 
 Map<String, dynamic> _$MediaItemToJson(MediaItem instance) => <String, dynamic>{
@@ -45,4 +46,5 @@ Map<String, dynamic> _$MediaItemToJson(MediaItem instance) => <String, dynamic>{
       'url': instance.url,
       'albumTitle': instance.albumTitle,
       'composerName': instance.composerName,
+      'releaseDate': instance.releaseDate,
     };
