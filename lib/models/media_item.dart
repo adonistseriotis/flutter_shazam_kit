@@ -26,8 +26,14 @@ class MediaItem {
   final List<String> genres;
   // @JsonKey(defaultValue: "")
   final String isrc;
-  // @JsonKey(defaultValue: [], ignore: true)
+  // @JsonKey(defaultValue: false)
+  final bool explicitContent;
+  // @JsonKey(defaultValue: "")
   final String url;
+  // @JsonKey(defaultValue: "")
+  final String albumTitle;
+  // @JsonKey(defaultValue: "")
+  final String composerName;
   // final List<Song> songs;
 
   MediaItem(
@@ -43,7 +49,10 @@ class MediaItem {
       this.webUrl = "",
       this.genres = const [],
       this.isrc = "",
-      this.url = ""});
+      this.explicitContent = false,
+      this.url = "",
+      this.albumTitle = "",
+      this.composerName = ""});
 
   factory MediaItem.fromJson(Map<String, dynamic> json) =>
       _$MediaItemFromJson(json);
