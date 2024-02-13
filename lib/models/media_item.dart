@@ -1,49 +1,47 @@
+// import 'package:json_annotation/json_annotation.dart';
+
 part 'media_item.g.dart';
 
 // @JsonSerializable()
 class MediaItem {
-  // @JsonKey(defaultValue: "")
   final String title;
-  // @JsonKey(defaultValue: "")
   final String subtitle;
-  // @JsonKey(defaultValue: "")
   final String shazamId;
-  // @JsonKey(defaultValue: "")
   final String appleMusicId;
-  // @JsonKey(defaultValue: "")
   final String appleMusicUrl;
-  // @JsonKey(defaultValue: "")
   final String artworkUrl;
-  // @JsonKey(defaultValue: "")
   final String artist;
-  // @JsonKey(defaultValue: 0)
   final double matchOffset;
-  // @JsonKey(defaultValue: "")
   final String videoUrl;
-  // @JsonKey(defaultValue: "")
   final String webUrl;
-  // @JsonKey(defaultValue: [])
   final List<String> genres;
-  // @JsonKey(defaultValue: "")
   final String isrc;
-  // @JsonKey(defaultValue: [], ignore: true)
+  final bool explicitContent;
   final String url;
+  final String albumTitle;
+  final String composerName;
+  final DateTime releaseDate;
   // final List<Song> songs;
 
-  MediaItem(
-      {required this.title,
-      this.subtitle = "",
-      required this.shazamId,
-      required this.appleMusicId,
-      required this.appleMusicUrl,
-      this.artworkUrl = "",
-      required this.artist,
-      this.matchOffset = 0,
-      this.videoUrl = "",
-      this.webUrl = "",
-      this.genres = const [],
-      this.isrc = "",
-      this.url = ""});
+  MediaItem({
+    required this.title,
+    this.subtitle = "",
+    required this.shazamId,
+    required this.appleMusicId,
+    required this.appleMusicUrl,
+    this.artworkUrl = "",
+    required this.artist,
+    this.matchOffset = 0,
+    this.videoUrl = "",
+    this.webUrl = "",
+    this.genres = const [],
+    this.isrc = "",
+    this.explicitContent = false,
+    this.url = "",
+    this.albumTitle = "",
+    this.composerName = "",
+    DateTime? releaseDate,
+  }) : releaseDate = releaseDate ?? DateTime.now();
 
   factory MediaItem.fromJson(Map<String, dynamic> json) =>
       _$MediaItemFromJson(json);
