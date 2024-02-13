@@ -74,16 +74,16 @@ extension SwiftFlutterShazamKitPlugin{
     private func generateSignature() {
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: .zero)
-
+        
         inputNode.installTap(onBus: .zero, bufferSize: 1024, format: recordingFormat) { [weak session] buffer, _ in
             session?.matchStreamingBuffer(buffer, at: nil)
         }
     }
     
     private func startAudioRecording() throws {
-      try audioEngine.start()
+        try audioEngine.start()
     }
-
+    
     func startListening(result: FlutterResult) throws {
         guard session != nil else{
             callbackChannel?.invokeMethod("didHasError", arguments: "ShazamSession not found, please call configureShazamKitSession() first to initialize it.")
@@ -129,44 +129,70 @@ extension SwiftFlutterShazamKitPlugin{
         try audioSession.setActive(true)
         try audioEngine.start()
         print("Audio engine is running after resuming? \(audioEngine.isRunning)")
-//        generateSignature()
+        //        generateSignature()
     }
+}
+
+struct MediaItems: Encodable {
+    let title: String?
+    let subtitle: String?
+    let shazamId: String?
+    let appleMusicId: String?
+    let appleMusicUrL: URL?
+    let artworkUrl: URL?
+    let artist: String?
+    let matchOffset: TimeInterval
+    let videoUrl: URL?
+    let webUrl: URL?
+    let genres: [String]
+    let isrc: String?
+    let explicitContent: Bool
+    let url: URL?
+    let albumTitle: String?
+    let composerName: String?
+    let releaseDate: String?
 }
 
 //MARK: Delegate methods for SHSession
 extension SwiftFlutterShazamKitPlugin: SHSessionDelegate{
     public func session(_ session: SHSession, didFind match: SHMatch) {
-        var mediaItems: [[String: Any]] = []
-        match.mediaItems.forEach{rawItem in
-            var item: [String: Any] = [:]
-            item["title"] = rawItem.title
-            item["subtitle"] = rawItem.subtitle
-            item["shazamId"] = rawItem.shazamID
-            item["appleMusicId"] = rawItem.appleMusicID
-            if let appleUrl = rawItem.appleMusicURL{
-                item["appleMusicUrl"] = appleUrl.absoluteString
+        let mediaItems = match.mediaItems
+        if let firstItem = mediaItems.first {
+            let songs = firstItem.songs.first
+            let url = songs?.previewAssets?.first?.url
+            let albumTitle = songs?.albumTitle
+            let composerName = songs?.composerName
+            let releaseDate = songs?.releaseDate?.ISO8601Format()
+            
+            let _shazamMedia = MediaItems(
+                title:firstItem.title,
+                subtitle:firstItem.subtitle,
+                shazamId:firstItem.shazamID,
+                appleMusicId:firstItem.appleMusicID,
+                appleMusicUrL:firstItem.appleMusicURL,
+                artworkUrl:firstItem.artworkURL,
+                artist:firstItem.artist,
+                matchOffset:firstItem.matchOffset,
+                videoUrl:firstItem.videoURL,
+                webUrl:firstItem.webURL,
+                genres:firstItem.genres,
+                isrc:firstItem.isrc,
+                explicitContent: firstItem.explicitContent,
+                url: url,
+                albumTitle: albumTitle,
+                composerName: composerName,
+                releaseDate: releaseDate
+            )
+            
+            //            print("=== _shazamMedia", _shazamMedia)
+            
+            do {
+                let jsonData = try JSONEncoder().encode([_shazamMedia])
+                let jsonString = String(data: jsonData, encoding: .utf8)!
+                self.callbackChannel?.invokeMethod("matchFound", arguments: jsonString)
+            } catch {
+                callbackChannel?.invokeMethod("didHasError", arguments: "Error when trying to format data, please try again")
             }
-            if let artworkUrl = rawItem.artworkURL{
-                item["artworkUrl"] = artworkUrl.absoluteString
-            }
-            item["artist"] = rawItem.artist
-            item["matchOffset"] = rawItem.matchOffset
-            if let videoUrl = rawItem.videoURL{
-                item["videoUrl"] = videoUrl.absoluteString
-            }
-            if let webUrl = rawItem.webURL{
-                item["webUrl"] = webUrl.absoluteString
-            }
-            item["genres"] = rawItem.genres
-            item["isrc"] = rawItem.isrc
-            mediaItems.append(item)
-        }
-        do{
-            let jsonData = try JSONSerialization.data(withJSONObject: mediaItems)
-            let jsonString = String(data: jsonData, encoding: .utf8)
-            self.callbackChannel?.invokeMethod("matchFound", arguments: jsonString)
-        }catch{
-            callbackChannel?.invokeMethod("didHasError", arguments: "Error when trying to format data, please try again")
         }
     }
     

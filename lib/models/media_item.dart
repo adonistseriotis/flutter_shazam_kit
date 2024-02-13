@@ -26,22 +26,37 @@ class MediaItem {
   final List<String> genres;
   // @JsonKey(defaultValue: "")
   final String isrc;
-  // @JsonKey(defaultValue: [], ignore: true)
+  // @JsonKey(defaultValue: false)
+  final bool explicitContent;
+  // @JsonKey(defaultValue: "")
+  final String url;
+  // @JsonKey(defaultValue: "")
+  final String albumTitle;
+  // @JsonKey(defaultValue: "")
+  final String composerName;
+  // @JsonKey(defaultValue: "")
+  final String releaseDate;
   // final List<Song> songs;
 
-  MediaItem(
-      {required this.title,
-      this.subtitle = "",
-      required this.shazamId,
-      required this.appleMusicId,
-      required this.appleMusicUrl,
-      this.artworkUrl = "",
-      required this.artist,
-      this.matchOffset = 0,
-      this.videoUrl = "",
-      this.webUrl = "",
-      this.genres = const [],
-      this.isrc = ""});
+  MediaItem({
+    required this.title,
+    this.subtitle = "",
+    required this.shazamId,
+    required this.appleMusicId,
+    required this.appleMusicUrl,
+    this.artworkUrl = "",
+    required this.artist,
+    this.matchOffset = 0,
+    this.videoUrl = "",
+    this.webUrl = "",
+    this.genres = const [],
+    this.isrc = "",
+    this.explicitContent = false,
+    this.url = "",
+    this.albumTitle = "",
+    this.composerName = "",
+    this.releaseDate = "",
+  });
 
   factory MediaItem.fromJson(Map<String, dynamic> json) =>
       _$MediaItemFromJson(json);
